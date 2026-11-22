@@ -19,7 +19,7 @@ A prepared, labelled GitHub issue goes in, one pull request comes out, and a per
 6. A person reviews and merges.
 7. When the pull request is merged or closed, the factory adds the result to the run record.
 
-- **Communication happens on the GitHub issue.** The factory posts its progress there: run started, pull request opened, or run failed and why.
+- **Communication happens on the GitHub issue.** The factory posts its progress there: run started, pull request opened, the agent declined and why, or the run failed and why.
 - **Verification is the repository's existing checks,** run on the pull request.
 - **The run ends when the pull request opens.** Nothing waits for review. When GitHub reports the pull request merged or closed, the factory writes the outcome, the check result and the time to merge into that run's record.
 - **One active run per issue.** If a run fails, adding the label again starts a new, isolated run on the same issue. A label added while a run is active is turned away. See [Starting a run](architecture/starting-a-run.md).
@@ -60,7 +60,7 @@ GitHub, the model vendors and the sandbox host are fixed. The rest is a leaning.
 | Area | Position | Status |
 | --- | --- | --- |
 | Code host | GitHub | Fixed |
-| Model vendors | Anthropic in the first version. OpenAI later, with its own harness and models | Fixed |
+| Model vendors | Anthropic API, with an API key, in the first version. OpenAI later, with its own harness and models | Fixed |
 | Where agents run | AWS Bedrock AgentCore Runtime | Fixed |
 | Harnesses | Claude Agent SDK only in the first version. Each version names its harness, so the Codex SDK can be added later | Fixed |
 | The factory's own code | AWS Lambda durable functions, one execution per run | Leaning |

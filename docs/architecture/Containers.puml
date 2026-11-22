@@ -22,13 +22,13 @@ AddBoundaryTag("Software System", $bgColor="#ffffff", $borderColor="#2b2b2b", $f
 Person(Factoryengineer, "Factory engineer", $descr="Changes the factory definition and compares versions.", $tags="Person,Human", $link="")
 System(GitHub, "GitHub", $descr="Issues, repositories, pull requests and their checks.", $tags="Software System,External", $link="")
 System(AWSBedrockAgentCoreRuntime, "AWS Bedrock AgentCore Runtime", $descr="Hosts each run's agent session in an isolated microVM. One runtime version per factory version.", $tags="Software System,External", $link="")
-System(Modelvendors, "Model vendors", $descr="Anthropic in the first version; OpenAI later.", $tags="Software System,External", $link="")
+System(Modelvendors, "Model vendors", $descr="Anthropic API in the first version; OpenAI later.", $tags="Software System,External", $link="")
 
 System_Boundary("Issuefactory_boundary", "Issue factory", $tags="Software System") {
   ContainerQueue(Issuefactory.Deadletterqueue, "Dead-letter queue", $techn="AWS SQS", $descr="Holds events the handler repeatedly fails to process.", $tags="Container,Queue", $link="")
   Container(Issuefactory.Eventhandler, "Event handler", $techn="AWS Lambda Event Function", $descr="Starts a run when the label is added and no run is active. Records the result when a run's pull request is merged or closed.", $tags="Container", $link="")
   Container(Issuefactory.Run, "Run", $techn="AWS Lambda durable function, one execution per run", $descr="Starts the agent session for the chosen version, opens the pull request and posts progress. Ends when the pull request opens or the run fails.", $tags="Container", $link="")
-  Container(Issuefactory.Agentsandbox, "Agent sandbox", $techn="Claude Agent SDK in one container image per factory version", $descr="The run's agent: a harness and the definition's files, working on a checkout of the repository.", $tags="Container", $link="")
+  Container(Issuefactory.Agentsandbox, "Agent sandbox", $techn="Claude Agent SDK in one container image per factory version", $descr="The agent runner starts the Claude Agent SDK session and reports its result to the run. The agent works on a checkout of the repository.", $tags="Container", $link="")
   ContainerDb(Issuefactory.Runrecord, "Run record", $techn="AWS DynamoDB", $descr="What ran, on what, the session's time and cost, and the outcome. Knows whether an issue has an active run.", $tags="Container,Database", $link="")
   Container(Issuefactory.Factorydefinition, "Factory definition", $techn="GitHub repository", $descr="Instructions, skills, hooks, harness and model. Each semver tag builds the sandbox image for that version.", $tags="Container", $link="")
   Container(Issuefactory.Webhookreceiver, "Webhook receiver", $techn="AWS Lambda Event Function with a function URL", $descr="Verifies GitHub webhooks and queues the events.", $tags="Container", $link="")
@@ -45,12 +45,13 @@ Rel(Issuefactory.Eventhandler, Issuefactory.Runrecord, "Checks for an active run
 Rel(Issuefactory.Eventhandler, GitHub, "Reads check results", $techn="REST", $tags="Relationship", $link="")
 Rel(Issuefactory.Eventhandler, Issuefactory.Run, "Starts a run", $techn="Lambda invoke", $tags="Relationship", $link="")
 Rel(Issuefactory.Run, Issuefactory.Factorydefinition, "Resolves the chosen version, or the newest tag", $techn="Git", $tags="Relationship", $link="")
-Rel(Issuefactory.Run, GitHub, "Mints the run's token, opens the pull request, posts progress on the issue", $techn="REST", $tags="Relationship", $link="")
-Rel(Issuefactory.Run, AWSBedrockAgentCoreRuntime, "Starts the session at the version's endpoint; reads back its events, result and cost", $techn="AgentCore API", $tags="Relationship", $link="")
+Rel(Issuefactory.Run, GitHub, "Mints the run's token, checks the run branch, opens the pull request, posts progress", $techn="REST", $tags="Relationship", $link="")
+Rel(Issuefactory.Run, AWSBedrockAgentCoreRuntime, "Starts the session at the version's endpoint with the start request", $techn="AgentCore API", $tags="Relationship", $link="")
 Rel(Issuefactory.Run, Issuefactory.Runrecord, "Writes versions, inputs, time and cost, outcome", $techn="", $tags="Relationship", $link="")
 Rel(AWSBedrockAgentCoreRuntime, Issuefactory.Agentsandbox, "Runs the session", $techn="", $tags="Relationship", $link="")
 Rel(Issuefactory.Agentsandbox, GitHub, "Clones the repository and pushes the run branch", $techn="Git", $tags="Relationship", $link="")
-Rel(Issuefactory.Agentsandbox, Modelvendors, "Runs the agent loop", $techn="Model inference", $tags="Relationship", $link="")
+Rel(Issuefactory.Agentsandbox, Modelvendors, "Runs the agent loop", $techn="Anthropic API key", $tags="Relationship", $link="")
+Rel(Issuefactory.Agentsandbox, Issuefactory.Run, "Completes the run's callback with the session result", $techn="Durable callback API", $tags="Relationship", $link="")
 
 SHOW_LEGEND(true)
 @enduml

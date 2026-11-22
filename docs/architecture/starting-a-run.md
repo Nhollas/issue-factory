@@ -1,6 +1,6 @@
 # Starting a run
 
-[Overview](./README.md) → **Starting a run**
+[Overview](./README.md) → **Starting a run** → [The run](./the-run.md)
 
 How a label on an issue becomes a run, how the factory keeps one run active per issue, and how an author runs an issue again.
 
@@ -18,6 +18,7 @@ How a label on an issue becomes a run, how the factory keeps one run active per 
 | `factory:ready` | Author | Start a run. |
 | `factory:running` | Factory, replacing `factory:ready` and any earlier end label | A run is active. |
 | `factory:done` | Factory, replacing `factory:running` | The run opened a pull request. GitHub shows the linked pull request. |
+| `factory:declined` | Factory, replacing `factory:running` | The agent chose not to make a change. A comment on the issue says why. |
 | `factory:failed` | Factory, replacing `factory:running` | The run failed. A comment on the issue says why. |
 | `factory:v<semver>`, such as `factory:v1.4.0` | Author | The factory definition version, matching the tag in the definition repository exactly. With none, the run uses the newest tag. The factory never removes it. |
 
@@ -51,9 +52,9 @@ Execution names allow 1 to 64 letters, digits, `-` and `_`. The repository's num
 
 ## Run start and end on the issue
 
-When the run starts, it sets `factory:running`, removes `factory:ready` and any earlier `factory:done` or `factory:failed`, and comments that the run has started.
+When the run starts, it sets `factory:running`, removes `factory:ready` and any earlier `factory:done`, `factory:declined` or `factory:failed`, and comments that the run has started.
 
-When the run ends, it sets `factory:done` or `factory:failed` and comments with the pull request or the reason it failed. Each comment and pull request names its run.
+When the run ends, it sets `factory:done`, `factory:declined` or `factory:failed` and comments with the pull request or the reason. [The run](./the-run.md#outcomes) defines which. Each comment and pull request names its run.
 
 ## Accepted edge cases
 

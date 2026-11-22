@@ -19,7 +19,7 @@ Person(Reviewer, "Reviewer", $descr="Reviews the pull request and decides whethe
 Person(Factoryengineer, "Factory engineer", $descr="Changes the factory definition and compares versions.", $tags="Person,Human", $link="")
 System(GitHub, "GitHub", $descr="Issues, repositories, pull requests and their checks.", $tags="Software System,External", $link="")
 System(AWSBedrockAgentCoreRuntime, "AWS Bedrock AgentCore Runtime", $descr="Hosts each run's agent session in an isolated microVM. One runtime version per factory version.", $tags="Software System,External", $link="")
-System(Modelvendors, "Model vendors", $descr="Anthropic in the first version; OpenAI later.", $tags="Software System,External", $link="")
+System(Modelvendors, "Model vendors", $descr="Anthropic API in the first version; OpenAI later.", $tags="Software System,External", $link="")
 System(Issuefactory, "Issue factory", $descr="Turns a labelled GitHub issue into one pull request.", $tags="Software System", $link="")
 
 Rel(Issueauthor, GitHub, "Writes the issue and adds the label", $techn="", $tags="Relationship", $link="")
@@ -28,7 +28,7 @@ Rel(Factoryengineer, Issuefactory, "Changes the definition and compares versions
 Rel(GitHub, Issuefactory, "Sends issue and pull request events", $techn="GitHub App webhook", $tags="Webhook", $link="")
 Rel(Issuefactory, GitHub, "Pushes the run branch, opens the pull request, posts progress, reads check results", $techn="Git, REST", $tags="Relationship", $link="")
 Rel(Issuefactory, AWSBedrockAgentCoreRuntime, "Runs the agent session", $techn="AgentCore API", $tags="Relationship", $link="")
-Rel(Issuefactory, Modelvendors, "Runs the agent loop", $techn="Model inference", $tags="Relationship", $link="")
+Rel(Issuefactory, Modelvendors, "Runs the agent loop", $techn="Anthropic API key", $tags="Relationship", $link="")
 
 SHOW_LEGEND(true)
 @enduml

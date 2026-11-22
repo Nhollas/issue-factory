@@ -15,7 +15,7 @@ This page names the parts and what each is responsible for. It does not describe
 | Factory engineer | Changes the factory definition and compares versions using the run record. |
 | GitHub | Issues, repositories, pull requests and their checks. The checks decide whether the work is good. |
 | AWS Bedrock AgentCore Runtime | Hosts each run's agent session in an isolated microVM. Each factory version is a runtime version behind its own endpoint. |
-| Model vendors | Anthropic in the first version; OpenAI later. |
+| Model vendors | The Anthropic API, with an API key, in the first version; OpenAI later. |
 
 ## Containers
 
@@ -28,7 +28,7 @@ This page names the parts and what each is responsible for. It does not describe
 | Dead-letter queue | Holds events the handler repeatedly fails to process. |
 | Event handler | Starts a run when the label is added and the issue has no active run. Adds the result to the run record when a run's pull request is merged or closed. |
 | Run | One durable execution per run. Resolves the definition version, starts the agent session at that version's endpoint, opens the pull request and posts progress on the issue. Ends when the pull request opens or the run fails. |
-| Agent sandbox | The run's single agent: the Claude Agent SDK and the definition's files in one image per factory version, working on a checkout of the repository. Pushes the run branch with a scoped token ([ADR 0001](../adr/0001-agent-holds-scoped-github-token.md)). |
+| Agent sandbox | One image per factory version. The agent runner starts the Claude Agent SDK session and completes the run's callback with its result; the agent works on a checkout of the repository. Pushes the run branch with a scoped token ([ADR 0001](../adr/0001-agent-holds-scoped-github-token.md)). |
 | Run record | What ran, on what, the session's time and cost, and the outcome. Knows whether an issue has an active run. |
 | Factory definition | Instructions, skills, hooks, harness and model, in its own GitHub repository. Each semver tag builds that version's sandbox image. |
 
@@ -39,6 +39,8 @@ This page names the parts and what each is responsible for. It does not describe
 - **Events go through a queue.** The receiver only verifies and queues; the handler does the work, with retries and a dead-letter queue.
 - **One agent per run, Claude only to start.** A run is one Claude Agent SDK session. Each version names its harness and model, so Codex can be added later.
 - **Each factory version is its own image.** A semver tag builds an image with the harness and the definition's files, deployed as an immutable AgentCore Runtime version behind its own endpoint.
+- **The run sleeps while the agent works.** The agent runner in the sandbox completes the run's durable callback when the session ends. See [The run](./the-run.md).
+- **Models come from the Anthropic API with an API key.**
 - **The receiver is a Lambda function URL.** GitHub can't sign requests with AWS credentials, so the URL is public and the receiver checks GitHub's webhook signature.
 - **The run record is DynamoDB.** A conditional write holds an issue's active-run claim. Comparing versions starts as a script over all runs; DynamoDB's export to S3 and Athena is there when that is no longer enough. The durable function's execution history is not the record.
 
@@ -58,3 +60,4 @@ This page names the parts and what each is responsible for. It does not describe
 | Document | Covers |
 | --- | --- |
 | [Starting a run](./starting-a-run.md) | Labels, the per-issue claim, and running an issue again. |
+| [The run](./the-run.md) | The run's sequence, the contract with the agent runner, and outcomes. |
