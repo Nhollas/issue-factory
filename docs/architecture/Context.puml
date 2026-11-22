@@ -1,0 +1,34 @@
+@startuml
+set separator none
+title Issue factory: people and systems around it
+
+top to bottom direction
+
+!include <C4/C4>
+!include <C4/C4_Context>
+
+AddElementTag("Software System", $bgColor="#34558b", $borderColor="#2b2b2b", $fontColor="#ffffff", $sprite="", $shadowing="", $borderStyle="solid", $borderThickness="2")
+AddElementTag("Person,Human", $bgColor="#4aa563", $borderColor="#2b2b2b", $fontColor="#ffffff", $sprite="", $shadowing="", $borderStyle="solid", $borderThickness="2")
+AddElementTag("Software System,External", $bgColor="#7f7f7f", $borderColor="#2b2b2b", $fontColor="#ffffff", $sprite="", $shadowing="", $borderStyle="solid", $borderThickness="2")
+
+AddRelTag("Relationship", $textColor="#2b2b2b", $lineColor="#2b2b2b", $lineStyle = "")
+AddRelTag("Webhook", $textColor="#2b2b2b", $lineColor="#2b2b2b", $lineStyle = DashedLine())
+
+Person(Issueauthor, "Issue author", $descr="Writes the issue and adds the factory label.", $tags="Person,Human", $link="")
+Person(Reviewer, "Reviewer", $descr="Reviews the pull request and decides whether to merge.", $tags="Person,Human", $link="")
+Person(Factoryengineer, "Factory engineer", $descr="Changes the factory definition and compares versions.", $tags="Person,Human", $link="")
+System(GitHub, "GitHub", $descr="Issues, repositories, pull requests and their checks.", $tags="Software System,External", $link="")
+System(AWSBedrockAgentCoreRuntime, "AWS Bedrock AgentCore Runtime", $descr="Hosts each run's agent session in an isolated microVM. One runtime version per factory version.", $tags="Software System,External", $link="")
+System(Modelvendors, "Model vendors", $descr="Anthropic in the first version; OpenAI later.", $tags="Software System,External", $link="")
+System(Issuefactory, "Issue factory", $descr="Turns a labelled GitHub issue into one pull request.", $tags="Software System", $link="")
+
+Rel(Issueauthor, GitHub, "Writes the issue and adds the label", $techn="", $tags="Relationship", $link="")
+Rel(Reviewer, GitHub, "Reviews and merges", $techn="", $tags="Relationship", $link="")
+Rel(Factoryengineer, Issuefactory, "Changes the definition and compares versions", $techn="", $tags="Relationship", $link="")
+Rel(GitHub, Issuefactory, "Sends issue and pull request events", $techn="GitHub App webhook", $tags="Webhook", $link="")
+Rel(Issuefactory, GitHub, "Pushes the run branch, opens the pull request, posts progress, reads check results", $techn="Git, REST", $tags="Relationship", $link="")
+Rel(Issuefactory, AWSBedrockAgentCoreRuntime, "Runs the agent session", $techn="AgentCore API", $tags="Relationship", $link="")
+Rel(Issuefactory, Modelvendors, "Runs the agent loop", $techn="Model inference", $tags="Relationship", $link="")
+
+SHOW_LEGEND(true)
+@enduml
