@@ -9,7 +9,7 @@ workspace "Issue factory" "Target architecture: the parts of the factory and who
         factoryEngineer = person "Factory engineer" "Changes the factory definition and compares versions." "Human"
 
         github = softwareSystem "GitHub" "Issues, repositories, pull requests and their checks." "External"
-        agentCore = softwareSystem "AWS Bedrock AgentCore Runtime" "Hosts each run's agent session in an isolated microVM. One runtime version per factory version." "External"
+        agentCore = softwareSystem "AWS Bedrock AgentCore Runtime" "Hosts each run's agent session in an isolated microVM." "External"
         modelVendors = softwareSystem "Model vendors" "Anthropic API in the first version; OpenAI later." "External"
 
         factory = softwareSystem "Issue factory" "Turns a labelled GitHub issue into one pull request." {
@@ -18,9 +18,9 @@ workspace "Issue factory" "Target architecture: the parts of the factory and who
             deadLetterQueue = container "Dead-letter queue" "Holds events the handler repeatedly fails to process." "AWS SQS" "Queue"
             eventHandler = container "Event handler" "Starts a run when the label is added and no run is active. Records the result when a run's pull request is merged or closed." "AWS Lambda Event Function"
             run = container "Run" "Starts the agent session for the chosen version, opens the pull request and posts progress. Ends when the pull request opens or the run fails." "AWS Lambda durable function, one execution per run"
-            agentSandbox = container "Agent sandbox" "The agent runner starts the Claude Agent SDK session and reports its result to the run. The agent works on a checkout of the repository." "Claude Agent SDK in one container image per factory version"
+            agentSandbox = container "Agent sandbox" "The agent runner clones the factory definition, starts the Claude Agent SDK session and reports its result to the run. The agent works on a checkout of the repository." "Claude Agent SDK in one container image"
             runRecord = container "Run record" "What ran, on what, the session's time and cost, and the outcome. Knows whether an issue has an active run." "AWS DynamoDB" "Database"
-            definition = container "Factory definition" "Instructions, skills, hooks, harness and model. Each semver tag builds the sandbox image for that version." "GitHub repository"
+            definition = container "Factory definition" "A Claude plugin and a settings file. Each semver tag is one factory version." "GitHub repository"
         }
 
         issueAuthor -> github "Writes the issue and adds the label"
@@ -43,10 +43,11 @@ workspace "Issue factory" "Target architecture: the parts of the factory and who
 
         run -> definition "Resolves the chosen version, or the newest tag" "Git"
         run -> github "Mints the run's token, checks the run branch, opens the pull request, posts progress" "REST"
-        run -> agentCore "Starts the session at the version's endpoint with the start request" "AgentCore API"
+        run -> agentCore "Starts the session with the start request" "AgentCore API"
         run -> runRecord "Writes versions, inputs, time and cost, outcome"
 
         agentCore -> agentSandbox "Runs the session"
+        agentSandbox -> definition "Clones the definition at the run's tag" "Git"
         agentSandbox -> github "Clones the repository and pushes the run branch" "Git"
         agentSandbox -> modelVendors "Runs the agent loop" "Anthropic API key"
         agentSandbox -> run "Completes the run's callback with the session result" "Durable callback API"

@@ -18,7 +18,7 @@ Person(Issueauthor, "Issue author", $descr="Writes the issue and adds the factor
 Person(Reviewer, "Reviewer", $descr="Reviews the pull request and decides whether to merge.", $tags="Person,Human", $link="")
 Person(Factoryengineer, "Factory engineer", $descr="Changes the factory definition and compares versions.", $tags="Person,Human", $link="")
 System(GitHub, "GitHub", $descr="Issues, repositories, pull requests and their checks.", $tags="Software System,External", $link="")
-System(AWSBedrockAgentCoreRuntime, "AWS Bedrock AgentCore Runtime", $descr="Hosts each run's agent session in an isolated microVM. One runtime version per factory version.", $tags="Software System,External", $link="")
+System(AWSBedrockAgentCoreRuntime, "AWS Bedrock AgentCore Runtime", $descr="Hosts each run's agent session in an isolated microVM.", $tags="Software System,External", $link="")
 System(Modelvendors, "Model vendors", $descr="Anthropic API in the first version; OpenAI later.", $tags="Software System,External", $link="")
 System(Issuefactory, "Issue factory", $descr="Turns a labelled GitHub issue into one pull request.", $tags="Software System", $link="")
 

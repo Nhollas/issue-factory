@@ -1,63 +1,22 @@
 # Issue factory architecture
 
-The factory turns a labelled GitHub issue into one pull request for a person to review. [The design notes](../software-factory.md) hold the workflow, principles and open items.
+The issue factory turns a labelled GitHub issue into one pull request for a person to review.
 
-This page names the parts and what each is responsible for. It does not describe every flow. [workspace.dsl](./workspace.dsl) is the source; render the diagrams with `scripts/render-c4.sh`.
+This documentation follows the [arc42](https://arc42.org/overview) template. The diagrams follow the [C4 model](https://c4model.com). [workspace.dsl](./workspace.dsl) is the source of the diagrams, and `scripts/render-c4.sh` renders them.
 
-## Context
-
-![People and systems around the factory](./Context.svg)
-
-| Person or system | Responsibility |
+| Section | Contents |
 | --- | --- |
-| Issue author | Writes the issue and adds the factory label. |
-| Reviewer | Reviews the pull request and decides whether to merge. |
-| Factory engineer | Changes the factory definition and compares versions using the run record. |
-| GitHub | Issues, repositories, pull requests and their checks. The checks decide whether the work is good. |
-| AWS Bedrock AgentCore Runtime | Hosts each run's agent session in an isolated microVM. Each factory version is a runtime version behind its own endpoint. |
-| Model vendors | The Anthropic API, with an API key, in the first version; OpenAI later. |
+| [1. Introduction and goals](./01-introduction-and-goals.md) | What the factory does, its quality goals and its stakeholders. |
+| [2. Constraints](./02-constraints.md) | Fixed technology and platform limits. |
+| [3. Context and scope](./03-context-and-scope.md) | The people and external systems around the factory. |
+| [4. Solution strategy](./04-solution-strategy.md) | The principles and the approach to each quality goal. |
+| [5. Building block view](./05-building-block-view.md) | The containers, the run record and the interfaces. |
+| [6. Runtime view](./06-runtime-view.md) | Starting a run, the run, running an issue again, and after the pull request. |
+| [7. Deployment view](./07-deployment-view.md) | Where each container runs. |
+| [8. Crosscutting concepts](./08-crosscutting-concepts.md) | Security, observability, error handling, versioning, limits and cost. |
+| [9. Architecture decisions](./09-architecture-decisions.md) | The index of ADRs. |
+| [10. Quality requirements](./10-quality-requirements.md) | The quality requirements in detail. |
+| [11. Risks and technical debt](./11-risks-and-technical-debt.md) | Open questions, risks, known gaps and deferred work. |
+| [12. Glossary](./12-glossary.md) | The domain terms. |
 
-## Containers
-
-![The factory's parts](./Containers.svg)
-
-| Container | Responsibility |
-| --- | --- |
-| Webhook receiver | Verifies GitHub webhooks and queues the events. Does nothing else, so it replies to GitHub quickly. |
-| Event queue | Holds events until the handler processes them. |
-| Dead-letter queue | Holds events the handler repeatedly fails to process. |
-| Event handler | Starts a run when the label is added and the issue has no active run. Adds the result to the run record when a run's pull request is merged or closed. |
-| Run | One durable execution per run. Resolves the definition version, starts the agent session at that version's endpoint, opens the pull request and posts progress on the issue. Ends when the pull request opens or the run fails. |
-| Agent sandbox | One image per factory version. The agent runner starts the Claude Agent SDK session and completes the run's callback with its result; the agent works on a checkout of the repository. Pushes the run branch with a scoped token ([ADR 0001](../adr/0001-agent-holds-scoped-github-token.md)). |
-| Run record | What ran, on what, the session's time and cost, and the outcome. Knows whether an issue has an active run. |
-| Factory definition | Instructions, skills, hooks, harness and model, in its own GitHub repository. Each semver tag builds that version's sandbox image. |
-
-## Decided at this level
-
-- **One active run per issue, and runs are isolated.** Adding `factory:ready` again after a run ends starts a new, independent run on the same issue. See [Starting a run](./starting-a-run.md).
-- **A run ends when its pull request opens.** Nothing waits for review. When the pull request is merged or closed, the event handler adds the result to that run's record.
-- **Events go through a queue.** The receiver only verifies and queues; the handler does the work, with retries and a dead-letter queue.
-- **One agent per run, Claude only to start.** A run is one Claude Agent SDK session. Each version names its harness and model, so Codex can be added later.
-- **Each factory version is its own image.** A semver tag builds an image with the harness and the definition's files, deployed as an immutable AgentCore Runtime version behind its own endpoint.
-- **The run sleeps while the agent works.** The agent runner in the sandbox completes the run's durable callback when the session ends. See [The run](./the-run.md).
-- **Models come from the Anthropic API with an API key.**
-- **The receiver is a Lambda function URL.** GitHub can't sign requests with AWS credentials, so the URL is public and the receiver checks GitHub's webhook signature.
-- **The run record is DynamoDB.** A conditional write holds an issue's active-run claim. Comparing versions starts as a script over all runs; DynamoDB's export to S3 and Athena is there when that is no longer enough. The durable function's execution history is not the record.
-
-## Not in the first version
-
-- **Recovering lost webhooks.** GitHub does not redeliver failed deliveries on its own. If a `factory:ready` delivery fails, nothing happens on the issue, and the author removes and re-adds the label. A scheduled job that redelivers failed deliveries can be added later without changing the design, because a redelivery keeps its delivery ID.
-
-## Open at this level
-
-| Open item | Notes |
-| --- | --- |
-| Whether the target repository's own `CLAUDE.md` loads | Useful repository knowledge, but it varies outside the factory version. The run record keeps the repository commit. |
-| AgentCore endpoint names and quotas | Not found in the docs: the naming rules for endpoints, and how many versions or endpoints a runtime can have. |
-
-## Detail
-
-| Document | Covers |
-| --- | --- |
-| [Starting a run](./starting-a-run.md) | Labels, the per-issue claim, and running an issue again. |
-| [The run](./the-run.md) | The run's sequence, the contract with the agent runner, and outcomes. |
+[Prior art](../research/prior-art.md) lists the systems that this design borrows from.
